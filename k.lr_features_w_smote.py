@@ -9,6 +9,7 @@ import numpy as np
 from imblearn.over_sampling import SMOTE
 from sklearn.inspection import permutation_importance
 
+a = 65
 # Load and preprocess the dataset
 df = pd.read_csv("datafile/heart_disease_uci.csv")
 df = df[df['dataset'] == "Cleveland"]
@@ -27,7 +28,7 @@ y = df['num_1']
 
 # Function to identify the least important feature
 def get_least_important_feature(model, X, y):
-    result = permutation_importance(model, X, y, n_repeats=10, random_state=42)
+    result = permutation_importance(model, X, y, n_repeats=10, random_state=a)
     feature_importances = result.importances_mean
     least_important_index = np.argmin(feature_importances)
     return least_important_index
@@ -47,17 +48,17 @@ def train_and_evaluate_logistic_with_gridsearch(X, y, cv=5):
     ]
 
     while len(remaining_features) > 1:
-        X_train, X_test, y_train, y_test = train_test_split(X[remaining_features], y, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X[remaining_features], y, test_size=0.2, random_state=a)
 
         # Apply SMOTE to balance the training data
-        smote = SMOTE(random_state=42)
+        smote = SMOTE(random_state=a)
         X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
         scaler_smote = StandardScaler()
         X_train_resampled_scaled = scaler_smote.fit_transform(X_train_resampled)
         X_test_scaled = scaler_smote.transform(X_test)
 
         # Using Logistic Regression with GridSearchCV for hyperparameter tuning
-        model = LogisticRegression(random_state=42, max_iter=1000)
+        model = LogisticRegression(random_state=a, max_iter=1000)
         grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
         grid_search.fit(X_train_resampled_scaled, y_train_resampled)
 
