@@ -1,104 +1,84 @@
-# With smote (NB)
+# Bagging - LR, SVM, Naïve Bayes (with smote)
 
+# Import necessary libraries 
 import pandas as pd
+from imblearn.over_sampling import SMOTE  # Import SMOTE
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import GaussianNB
-import matplotlib.pyplot as plt
-import numpy as np
-from imblearn.over_sampling import SMOTE
-from sklearn.inspection import permutation_importance
+from sklearn.ensemble import BaggingClassifier, VotingClassifier
 
-# Load and preprocess the dataset
+print("Processing data with two classes to build models, applying feature scaling, one-hot encoding, and bagging ensemble.")
+
+# Load and filter the dataset
 df = pd.read_csv("datafile/heart_disease_uci.csv")
-df = df[df['dataset'] == "Cleveland"]
+df = df[df['dataset'] == "Cleveland"]  
 df = df[df['age'] != 28]
 
+# Convert target values: keep 0 as 0 and group 1-4 into class 1
 df['num'] = df['num'].apply(lambda x: 0 if x == 0 else 1)
 df['num'] = df['num'].astype('str')
 
-df = df.dropna()
+# Drop rows with missing values
+df = df.dropna()  
+
+# One-hot encode categorical variables and drop the first level
 df = pd.get_dummies(df, drop_first=True)
 
 # Define features (X) and the target variable (y)
-X = df.drop('num_1', axis=1)
-X = X.drop('id', axis=1)
+X = df.drop(['num_1', 'id'], axis=1)
 y = df['num_1']
 
-# Function to identify the least important feature
-def get_least_important_feature(model, X, y):
-    result = permutation_importance(model, X, y, n_repeats=10, random_state=42)
-    feature_importances = result.importances_mean
-    least_important_index = np.argmin(feature_importances)
-    return least_important_index
+# Apply SMOTE to balance the dataset
+smote = SMOTE(random_state=42)
+X_resampled, y_resampled = smote.fit_resample(X, y)
 
-# Function to train and evaluate Naive Bayes with grid search, 5-fold CV, and permutation importance
-def train_and_evaluate_naive_bayes_with_gridsearch(X, y, cv=5):
-    num_features = []
-    accuracies = []
-    features_used = []
-    test_accuracies = []
-    remaining_features = list(X.columns)
-
-    # Define parameter grid for GridSearchCV
-    param_grid = {
-        'var_smoothing': [10**(-i) for i in range(12, 6, -1)]  # 1e-12 to 1e-6
-    }
-
-    while len(remaining_features) > 1:
-        X_train, X_test, y_train, y_test = train_test_split(X[remaining_features], y, test_size=0.2, random_state=42)
-
-        # Apply SMOTE to balance the training data
-        smote = SMOTE(random_state=42)
-        X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
-        scaler_smote = StandardScaler()
-        X_train_resampled_scaled = scaler_smote.fit_transform(X_train_resampled)
-        X_test_scaled = scaler_smote.transform(X_test)
-
-        # Using Naive Bayes with GridSearchCV for hyperparameter tuning
-        model = GaussianNB()
-        grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
-        grid_search.fit(X_train_resampled_scaled, y_train_resampled)
-
-        # Get best parameters from grid search
-        best_params = grid_search.best_params_
-        print(f"Best parameters for this iteration: {best_params}")
-
-        # Predict and evaluate accuracy using cross-validation
-        best_model = grid_search.best_estimator_
-        cv_accuracy = grid_search.best_score_
-        y_pred = best_model.predict(X_test_scaled)
-        test_accuracy = accuracy_score(y_test, y_pred)
-
-        # Store results
-        num_features.append(len(remaining_features))
-        accuracies.append(cv_accuracy)
-        test_accuracies.append(test_accuracy)
-        features_used.append(list(remaining_features))  
-
-        # Identify and remove the least important feature
-        least_important_index = get_least_important_feature(best_model, X_test_scaled, y_test)
-        remaining_features.pop(least_important_index)
-
-    return num_features, accuracies, features_used, test_accuracies
-
-# With SMOTE
-num_features_smote, accuracies_smote, features_used_smote, test_accuracies_smote = train_and_evaluate_naive_bayes_with_gridsearch(
-    X, y
+# Split data into training and testing sets (80% training, 20% testing)
+X_train, X_test, y_train, y_test = train_test_split(
+    X_resampled, y_resampled, test_size=0.2, random_state=42
 )
 
-# Plot accuracy vs. number of features for the SMOTE scenario
-plt.figure(figsize=(8, 6))
-plt.plot(num_features_smote, test_accuracies_smote, marker='o', linestyle='-', color='g')
-plt.xlabel('Number of Features')
-plt.ylabel('Test Accuracy')
-plt.title('Test Accuracy vs Number of Features (Naive Bayes with GridSearchCV, with SMOTE)')
-plt.grid()
-plt.show()
+# Scale the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
 
-# Print results
-print("\nFinal Results with SMOTE:")
-for n, acc, features, test_acc in zip(num_features_smote, accuracies_smote, features_used_smote, test_accuracies_smote):
-    print(f"Number of features: {n}, Cross-Validation Accuracy: {acc:.4f}, Test Accuracy: {test_acc:.4f}")
-    print(f"Features used: {features}")
+# Define base estimators: SVM, Logistic Regression, and Naïve Bayes
+svm = SVC(random_state=42)  # Ensure probability=True for compatibility
+lr = LogisticRegression(random_state=42, max_iter=1000)
+nb = GaussianNB()
+
+# Combine the classifiers into a VotingClassifier
+voting_clf = VotingClassifier(
+    estimators=[('lr', lr), ('svm', svm), ('nb', nb)], 
+    voting='hard'
+)
+
+# Use BaggingClassifier with the VotingClassifier as the base estimator
+bagging_voting = BaggingClassifier(
+    estimator=voting_clf,
+    random_state=42
+)
+
+# Define the parameter grid
+param_grid = {
+    'n_estimators': [100, 150, 200],  # Number of models to train
+    'max_samples': [0.8, 0.9, 1.0],  # Fraction of training samples
+}
+
+# Perform grid search
+grid_search = GridSearchCV(bagging_voting, param_grid, cv=5, scoring='accuracy')
+grid_search.fit(X_train_scaled, y_train)
+
+# Print best parameters and accuracy
+print("Best Parameters:", grid_search.best_params_)
+print("Best Cross-Validation Accuracy:", grid_search.best_score_)
+
+# Evaluate the best model on the test set
+best_model = grid_search.best_estimator_
+y_pred = best_model.predict(X_test_scaled)
+test_accuracy = accuracy_score(y_test, y_pred)
+print("Test Accuracy:", test_accuracy)
