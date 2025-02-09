@@ -1,4 +1,4 @@
-# With SMOTE
+# With smote (NB)
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
@@ -15,7 +15,7 @@ df = df[df['dataset'] == "Cleveland"]
 df = df[df['age'] != 28]
 
 df['num'] = df['num'].apply(lambda x: 0 if x == 0 else 1)
-df['num'] = df['num'].astype(str)
+df['num'] = df['num'].astype('str')
 
 df = df.dropna()
 df = pd.get_dummies(df, drop_first=True)
@@ -32,22 +32,20 @@ def get_least_important_feature(model, X, y):
     least_important_index = np.argmin(feature_importances)
     return least_important_index
 
-# Function to train and evaluate the Naïve Bayes model with grid search, 5-fold CV, and permutation importance
-def train_and_evaluate_nb_with_gridsearch(X, y, cv=5):
+# Function to train and evaluate Naive Bayes with grid search, 5-fold CV, and permutation importance
+def train_and_evaluate_naive_bayes_with_gridsearch(X, y, cv=5):
     num_features = []
     accuracies = []
     features_used = []
-    test_accuracies = []  
-
+    test_accuracies = []
     remaining_features = list(X.columns)
 
-    # Define parameter grid for Naïve Bayes
+    # Define parameter grid for GridSearchCV
     param_grid = {
         'var_smoothing': [10**(-i) for i in range(12, 6, -1)]  # 1e-12 to 1e-6
     }
 
-    while len(remaining_features) > 0:
-        # Split data into training and testing sets
+    while len(remaining_features) > 1:
         X_train, X_test, y_train, y_test = train_test_split(X[remaining_features], y, test_size=0.2, random_state=42)
 
         # Apply SMOTE to balance the training data
@@ -57,14 +55,14 @@ def train_and_evaluate_nb_with_gridsearch(X, y, cv=5):
         X_train_resampled_scaled = scaler_smote.fit_transform(X_train_resampled)
         X_test_scaled = scaler_smote.transform(X_test)
 
-        # Using the Naïve Bayes model with GridSearchCV for hyperparameter tuning
+        # Using Naive Bayes with GridSearchCV for hyperparameter tuning
         model = GaussianNB()
         grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
         grid_search.fit(X_train_resampled_scaled, y_train_resampled)
 
         # Get best parameters from grid search
         best_params = grid_search.best_params_
-        print(f"Best parameters for this iteration: {best_params}") 
+        print(f"Best parameters for this iteration: {best_params}")
 
         # Predict and evaluate accuracy using cross-validation
         best_model = grid_search.best_estimator_
@@ -85,7 +83,7 @@ def train_and_evaluate_nb_with_gridsearch(X, y, cv=5):
     return num_features, accuracies, features_used, test_accuracies
 
 # With SMOTE
-num_features_smote, accuracies_smote, features_used_smote, test_accuracies_smote = train_and_evaluate_nb_with_gridsearch(
+num_features_smote, accuracies_smote, features_used_smote, test_accuracies_smote = train_and_evaluate_naive_bayes_with_gridsearch(
     X, y
 )
 
@@ -94,7 +92,7 @@ plt.figure(figsize=(8, 6))
 plt.plot(num_features_smote, test_accuracies_smote, marker='o', linestyle='-', color='g')
 plt.xlabel('Number of Features')
 plt.ylabel('Test Accuracy')
-plt.title('Test Accuracy vs Number of Features (Naïve Bayes with GridSearchCV, with SMOTE)')
+plt.title('Test Accuracy vs Number of Features (Naive Bayes with GridSearchCV, with SMOTE)')
 plt.grid()
 plt.show()
 
