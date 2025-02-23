@@ -24,10 +24,16 @@ df = pd.get_dummies(df, drop_first=True)
 X = df.drop('num_1', axis=1)
 X = X.drop('id', axis=1)
 y = df['num_1']
+rs = 49
+
+# Convert boolean columns to integers
+for col in X.columns:
+    if X[col].dtype == 'bool':
+        X[col] = X[col].astype(int)
 
 # Function to identify the least important feature
 def get_least_important_feature(model, X, y):
-    result = permutation_importance(model, X, y, n_repeats=10, random_state=42)
+    result = permutation_importance(model, X, y, n_repeats=10, random_state=rs)
     feature_importances = result.importances_mean
     least_important_index = np.argmin(feature_importances)
     return least_important_index
@@ -51,17 +57,17 @@ def train_and_evaluate_svm_with_gridsearch(X, y, cv=5):
 
     while len(remaining_features) > 0:
         # Split data into training and testing sets
-        X_train, X_test, y_train, y_test = train_test_split(X[remaining_features], y, test_size=0.2, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X[remaining_features], y, test_size=0.2, random_state=rs)
 
         # Apply SMOTE to balance the training data
-        smote = SMOTE(random_state=42)
+        smote = SMOTE(random_state=rs)
         X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
         scaler_smote = StandardScaler()
         X_train_resampled_scaled = scaler_smote.fit_transform(X_train_resampled)
         X_test_scaled = scaler_smote.transform(X_test)
 
         # Using the SVM model with GridSearchCV for hyperparameter tuning
-        model = SVC(random_state=42)
+        model = SVC(random_state=rs)
         grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
         grid_search.fit(X_train_resampled_scaled, y_train_resampled)
 

@@ -23,9 +23,10 @@ X = df.drop('num_1', axis=1)
 X = X.drop('id', axis=1)
 y = df['num_1']
 
+rs = 54
 # Function to identify and remove the least important feature
 def remove_least_important_feature(model, X_train, X_test, y_train, y_test):
-    result = permutation_importance(model, X_test, y_test, n_repeats=10, random_state=42)
+    result = permutation_importance(model, X_test, y_test, n_repeats=10, random_state=rs)
     feature_importances = result.importances_mean
     least_important_index = np.argmin(feature_importances)
     return least_important_index
@@ -35,7 +36,7 @@ def train_and_evaluate_svm_with_gridsearch(X, y, cv=5):
     
     # Split data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=rs
     )
 
     # Scale the features
@@ -61,7 +62,7 @@ def train_and_evaluate_svm_with_gridsearch(X, y, cv=5):
     while len(remaining_features) > 0:
         # Split data into training and testing sets
         X_train, X_test, y_train, y_test = train_test_split(
-            X[remaining_features], y, test_size=0.2, random_state=42
+            X[remaining_features], y, test_size=0.2, random_state=rs
         )
 
         # Scale the features
@@ -73,7 +74,7 @@ def train_and_evaluate_svm_with_gridsearch(X, y, cv=5):
         X_test_temp = X_test_scaled
     
         # Using the SVM model with GridSearchCV for hyperparameter tuning
-        model = SVC(random_state=42)
+        model = SVC(random_state=rs)
         grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=cv)
         grid_search.fit(X_train_temp, y_train)
 

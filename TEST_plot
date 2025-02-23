@@ -1,0 +1,38 @@
+import numpy as np
+import scipy.stats as st
+import matplotlib.pyplot as plt
+
+# Given SVM accuracies with SMOTE
+svm_smote_accuracies = [91.67, 88.33, 90, 90, 90, 91.67, 90, 85, 90, 90]
+
+# Compute Mean and Standard Deviation
+mean_svm_smote_acc = np.mean(svm_smote_accuracies)
+std_svm_smote_acc = np.std(svm_smote_accuracies)
+n_svm_smote = len(svm_smote_accuracies)
+
+# Compute 95% Confidence Interval
+confidence_interval_svm_smote = st.t.interval(0.95, df=n_svm_smote-1, loc=mean_svm_smote_acc, scale=std_svm_smote_acc/np.sqrt(n_svm_smote))
+
+# Plot Mean Accuracy with 95% CI Error Bars for SVM with SMOTE
+plt.figure(figsize=(8, 5))
+plt.errorbar(
+    x=[1], y=[mean_svm_smote_acc], yerr=[[mean_svm_smote_acc - confidence_interval_svm_smote[0]], [confidence_interval_svm_smote[1] - mean_svm_smote_acc]],
+    fmt='o', color='red', capsize=5, label="SVM with SMOTE Accuracy (95% CI)"
+)
+
+# Labels and title
+plt.xlim(0, 2)
+plt.ylim(min(svm_smote_accuracies) - 2, max(svm_smote_accuracies) + 2)
+plt.xticks([])  # Hide x-axis ticks
+plt.ylabel("Accuracy (%)")
+plt.title("SVM with SMOTE Accuracy with 95% Confidence Interval")
+plt.legend()
+plt.grid()
+
+# Show the plot
+plt.show()
+
+# Print numerical values for research paper reporting
+print(f"SVM with SMOTE Mean Accuracy: {mean_svm_smote_acc:.2f}%")
+print(f"SVM with SMOTE Standard Deviation: {std_svm_smote_acc:.2f}%")
+print(f"SVM with SMOTE 95% Confidence Interval: ({confidence_interval_svm_smote[0]:.2f}%, {confidence_interval_svm_smote[1]:.2f}%)")

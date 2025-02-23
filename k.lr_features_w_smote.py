@@ -9,7 +9,7 @@ import numpy as np
 from imblearn.over_sampling import SMOTE
 from sklearn.inspection import permutation_importance
 
-a = 65
+a = 49
 # Load and preprocess the dataset
 df = pd.read_csv("datafile/heart_disease_uci.csv")
 df = df[df['dataset'] == "Cleveland"]
