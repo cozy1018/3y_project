@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
@@ -54,7 +55,6 @@ df = pd.get_dummies(df, drop_first=True)
 X = df.drop(['num_1', 'id'], axis=1)
 y = df['num_1']
 
-skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 num_of_classes = 2 
 
 svm_model = SVC(probability=True, random_state=42)
@@ -63,32 +63,31 @@ nb_model = GaussianNB()
 
 pred_svm, pred_lr, pred_nb, actual = [], [], [], []
 
-for train_index, test_index in skf.split(X, y):
-    X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-    y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+# Split data into training and testing sets (80% training, 20% testing)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Apply SMOTE
+smote = SMOTE(random_state=42)
+X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
     
-    # Apply SMOTE
-    smote = SMOTE(random_state=42)
-    X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train_resampled)
+X_test_scaled = scaler.transform(X_test)
     
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train_resampled)
-    X_test_scaled = scaler.transform(X_test)
+# Train models
+svm_model.fit(X_train_scaled, y_train_resampled)
+lr_model.fit(X_train_scaled, y_train_resampled)
+nb_model.fit(X_train_scaled, y_train_resampled)
     
-    # Train models
-    svm_model.fit(X_train_scaled, y_train_resampled)
-    lr_model.fit(X_train_scaled, y_train_resampled)
-    nb_model.fit(X_train_scaled, y_train_resampled)
+# Make predictions
+res_svm = svm_model.predict_proba(X_test_scaled)
+res_lr = lr_model.predict_proba(X_test_scaled)
+res_nb = nb_model.predict_proba(X_test_scaled)
     
-    # Make predictions
-    res_svm = svm_model.predict_proba(X_test_scaled)
-    res_lr = lr_model.predict_proba(X_test_scaled)
-    res_nb = nb_model.predict_proba(X_test_scaled)
-    
-    pred_svm.append(res_svm)
-    pred_lr.append(res_lr)
-    pred_nb.append(res_nb)
-    actual.append(y_test)
+pred_svm.append(res_svm)
+pred_lr.append(res_lr)
+pred_nb.append(res_nb)
+actual.append(y_test)
 
 # Flatten predictions
 pred_svm = np.concatenate(pred_svm, axis=0)

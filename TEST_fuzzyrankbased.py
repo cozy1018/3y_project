@@ -15,14 +15,14 @@ def generateRank1(score, class_no):
     rank = np.zeros([class_no, 1])
     scores = score
     for i in range(class_no):
-        rank[i] = 1 - np.exp(-((scores[i] - 1) ** 2) / 2.0)
+        rank[i] = 1 - (-((scores[i] - 1) ** 2) / 2.0)
     return rank
 
 def generateRank2(score, class_no):
     rank = np.zeros([class_no, 1])
     scores = score
     for i in range(class_no):
-        rank[i] = 1 - np.tanh(((scores[i] - 1) ** 2) / 2)
+        rank[i] = 2 * (1 - (1 / (1 + np.exp(-(scores[i] - 1)))) ** 2)
     return rank
 
 def doFusion(res1, res2, res3, label, class_no):

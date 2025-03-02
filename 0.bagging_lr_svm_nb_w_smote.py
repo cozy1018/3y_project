@@ -1,7 +1,8 @@
-# Bagging - LR, SVM, Naïve Bayes
+# Bagging - LR, SVM, Naïve Bayes (with smote)
 
 # Import necessary libraries 
 import pandas as pd
+from imblearn.over_sampling import SMOTE  # Import SMOTE
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -16,6 +17,7 @@ print("Processing data with two classes to build models, applying feature scalin
 df = pd.read_csv("datafile/heart_disease_uci.csv")
 df = df[df['dataset'] == "Cleveland"]  
 df = df[df['age'] != 28]
+rs = 59
 
 # Convert target values: keep 0 as 0 and group 1-4 into class 1
 df['num'] = df['num'].apply(lambda x: 0 if x == 0 else 1)
@@ -28,12 +30,16 @@ df = df.dropna()
 df = pd.get_dummies(df, drop_first=True)
 
 # Define features (X) and the target variable (y)
-X = df.drop(['num_1', 'id'], axis=1, errors='ignore')
+X = df.drop(['num_1', 'id'], axis=1)
 y = df['num_1']
+
+# Apply SMOTE to balance the dataset
+smote = SMOTE(random_state=rs)
+X_resampled, y_resampled = smote.fit_resample(X, y)
 
 # Split data into training and testing sets (80% training, 20% testing)
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X_resampled, y_resampled, test_size=0.2, random_state=rs
 )
 
 # Scale the features
@@ -42,8 +48,8 @@ X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # Define base estimators: SVM, Logistic Regression, and Naïve Bayes
-svm = SVC(random_state=42, probability=True)  # Ensure probability=True for compatibility
-lr = LogisticRegression(random_state=42, max_iter=1000)
+svm = SVC(random_state=rs)  # Ensure probability=True for compatibility
+lr = LogisticRegression(random_state=rs, max_iter=1000)
 nb = GaussianNB()
 
 # Combine the classifiers into a VotingClassifier
@@ -55,12 +61,12 @@ voting_clf = VotingClassifier(
 # Use BaggingClassifier with the VotingClassifier as the base estimator
 bagging_voting = BaggingClassifier(
     estimator=voting_clf,
-    random_state=42
+    random_state=rs
 )
 
 # Define the parameter grid
 param_grid = {
-    'n_estimators': [100, 150, 200],  # Number of models to train
+    'n_estimators': [100, 150, 200, 250, 300],  # Number of models to train
     'max_samples': [0.8, 0.9, 1.0],  # Fraction of training samples
 }
 
