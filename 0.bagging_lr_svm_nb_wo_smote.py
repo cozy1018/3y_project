@@ -30,7 +30,7 @@ df = pd.get_dummies(df, drop_first=True)
 # Define features (X) and the target variable (y)
 X = df.drop(['num_1', 'id'], axis=1, errors='ignore')
 y = df['num_1']
-rs = 58
+rs = 69
 
 # Split data into training and testing sets (80% training, 20% testing)
 X_train, X_test, y_train, y_test = train_test_split(

@@ -56,6 +56,7 @@ X = df.drop(['num_1', 'id'], axis=1)
 y = df['num_1']
 
 num_of_classes = 2 
+rs = 42
 
 svm_model = SVC(probability=True, random_state=42)
 lr_model = LogisticRegression(max_iter=1000)
@@ -64,10 +65,10 @@ nb_model = GaussianNB()
 pred_svm, pred_lr, pred_nb, actual = [], [], [], []
 
 # Split data into training and testing sets (80% training, 20% testing)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=rs)
 
 # Apply SMOTE
-smote = SMOTE(random_state=42)
+smote = SMOTE(random_state=rs)
 X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
     
 scaler = StandardScaler()

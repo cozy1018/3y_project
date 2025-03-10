@@ -23,7 +23,7 @@ X = df.drop('num_1', axis=1)
 X = X.drop('id', axis=1)
 y = df['num_1']
 
-rs = 54
+rs = 99
 # Function to identify and remove the least important feature
 def remove_least_important_feature(model, X_train, X_test, y_train, y_test):
     result = permutation_importance(model, X_test, y_test, n_repeats=10, random_state=rs)

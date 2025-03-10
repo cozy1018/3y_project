@@ -9,7 +9,7 @@ import numpy as np
 from imblearn.over_sampling import SMOTE
 from sklearn.inspection import permutation_importance
 
-a = 49
+a = 59
 # Load and preprocess the dataset
 df = pd.read_csv("datafile/heart_disease_uci.csv")
 df = df[df['dataset'] == "Cleveland"]
@@ -20,6 +20,10 @@ df['num'] = df['num'].astype('str')
 
 df = df.dropna()
 df = pd.get_dummies(df, drop_first=True)
+
+# Convert boolean columns to integers
+for col in df.select_dtypes(include=['bool']).columns:
+    df[col] = df[col].astype(int)
 
 # Define features (X) and the target variable (y)
 X = df.drop('num_1', axis=1)

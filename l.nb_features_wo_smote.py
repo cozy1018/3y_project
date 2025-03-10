@@ -23,7 +23,7 @@ df = pd.get_dummies(df, drop_first=True)
 X = df.drop('num_1', axis=1)
 X = X.drop('id', axis=1)
 y = df['num_1']
-rs = 49
+rs = 79
 
 # Function to identify and remove the least important feature
 def remove_least_important_feature(model, X_train, X_test, y_train, y_test):
